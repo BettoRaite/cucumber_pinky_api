@@ -1,0 +1,46 @@
+version: '3.9'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: app
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./src
+          target: /app/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json
+    ports:
+      - '${PORT}:${PORT}'
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DATABASE}
+      NODE_ENV: 'development'
+    depends_on:
+      database:
+        condition: service_healthy # Wait for database to be healthy before starting app
+    restart: unless-stopped
+  database:
+    image: postgres:17.2-alpine3.21
+    container_name: database
+    ports:
+      - '5432:5432'
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    restart: always
+    # Health check configuration
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready']
+      interval: 10s
+      timeout: 5s
+      retries: 5
