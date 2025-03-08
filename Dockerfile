@@ -23,4 +23,4 @@ COPY . .
 EXPOSE 5000
 
 # Start the application with dumb-init in development mode
-CMD ["pnpm","run", "start"]
+CMD ["pnpm","run", "dev"]

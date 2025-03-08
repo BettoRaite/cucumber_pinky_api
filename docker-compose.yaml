@@ -1,11 +1,11 @@
-version: '3.9'
-
 services:
-  app:
+  task-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: app
+    container_name: task-api
+    networks:
+      - task-network
     develop:
       watch:
         - action: sync+restart
@@ -20,27 +20,34 @@ services:
     env_file:
       - ./.env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DATABASE}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@task-database:5432/${POSTGRES_DATABASE}
       NODE_ENV: 'development'
     depends_on:
       database:
-        condition: service_healthy # Wait for database to be healthy before starting app
+        condition: service_healthy
     restart: unless-stopped
-  database:
+
+  task-database:
     image: postgres:17.2-alpine3.21
-    container_name: database
+    container_name: task-database
+    networks:
+      - task-network
     ports:
-      - '5432:5432'
+      - '5434:5432'
     env_file:
       - ./.env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DATABASE}
-    restart: always
-    # Health check configuration
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready']
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DATABASE}']
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: always
+
+networks:
+  task-network:
+    driver: bridge
