@@ -4,13 +4,12 @@ import { usersTable } from './database/schema';
 
 async function seedAdmin() {
   try {
-    let [user] = await db
+    const [user] = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.username, 'admin'));
+      .where(eq(usersTable.email, 'admin@gmail.com'));
     if (!user) {
       await db.insert(usersTable).values({
-        username: 'admin',
         email: 'admin@gmail.com',
         password: 'pass',
       });
@@ -21,7 +20,7 @@ async function seedAdmin() {
   }
 }
 function seed() {
-  seedAdmin();
+  void seedAdmin();
 }
 
 seed();
