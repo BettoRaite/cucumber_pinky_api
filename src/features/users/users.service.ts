@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from 'src/shared/dtos/create-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserSelect, usersTable } from 'src/database/schema';
 import { db } from 'src/database';
@@ -8,9 +8,7 @@ import { eq } from 'drizzle-orm';
 @Injectable()
 export class UsersService {
   async create(createUserDto: CreateUserDto) {
-    console.log(createUserDto);
-    const v = await new Promise((res) => res(1));
-    return v;
+    await db.insert(usersTable).values(createUserDto);
   }
 
   async findAll() {
@@ -26,7 +24,7 @@ export class UsersService {
     return result.at(0);
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
+  update(id: number, updateUserDto) {
     return `This action updates a #${id} user`;
   }
 
