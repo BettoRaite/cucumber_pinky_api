@@ -1,16 +1,32 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { UsersController } from './features/users/users.controller';
-import { AuthController } from './features/auth/auth.controller';
+import {
+  Module,
+  NestModule,
+  MiddlewareConsumer,
+  RequestMethod,
+} from '@nestjs/common';
+import { LoggerMiddleware } from './shared/middleware/logger.middleware';
+import { AuthGuard } from './features/auth/auth.guard';
 import { AuthModule } from './features/auth/auth.module';
-import { UsersService } from './features/users/users.service';
+import { ActivitiesModule } from './features/activities/activities.module';
 import { UsersModule } from './features/users/users.module';
-import { AuthService } from './features/auth/auth.service';
-
+import { JwtModule } from './features/auth/jwt/jwt.module';
+import { JwtService } from './features/auth/jwt/jwt.service';
 @Module({
-  imports: [AuthModule, UsersModule],
-  controllers: [AppController, UsersController, AuthController],
-  providers: [AppService, UsersService, AuthService],
+  imports: [AuthModule, JwtModule, ActivitiesModule, UsersModule],
+  controllers: [],
+  providers: [
+    JwtService,
+    {
+      provide: 'APP_GUARD',
+      useClass: AuthGuard,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes({
+      path: '*',
+      method: RequestMethod.ALL,
+    });
+  }
+}
