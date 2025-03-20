@@ -1,0 +1,53 @@
+services:
+  task-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: task-api
+    networks:
+      - task-network
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./src
+          target: /app/src
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json
+    ports:
+      - '${PORT}:${PORT}'
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@task-database:5432/${POSTGRES_DATABASE}
+      NODE_ENV: 'development'
+    depends_on:
+      task-database:
+        condition: service_healthy
+    restart: unless-stopped
+
+  task-database:
+    image: postgres:17.2-alpine3.21
+    container_name: task-database
+    networks:
+      - task-network
+    ports:
+      - '5434:5432'
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DATABASE}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+networks:
+  task-network:
+    driver: bridge
